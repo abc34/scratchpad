@@ -1,42 +1,100 @@
 (function()
 {
+  console.time("Elapsed (tree fast)");
+  var N = 32,/*длина блока*/
+      m,     /*количество различных длин*/
+      v_arr, /*массив распределений длин*/
+      s_arr, /*массив частичных сумм*/
+      n_arr, /*массив длин, упорядоченные по возрастанию и не превышающие N*/
+      c = 0, /*счётчик*/
+      d_arr; /*приращения длин*/
+  n_arr = (new Uint16Array(8)).map((v,i)=>{return i+1;});
+  //n_arr = new Uint16Array([1,3,5,8]);/*зададим длины*/
+  //n_arr = new Uint16Array([1,2,3,5,8,13,21,29]);/*зададим длины*/
+  v_arr = new Uint8Array(N/n_arr[0]+1);
+  s_arr = new Uint8Array(v_arr.length);
+  n_arr.sort(); /*force sort by asc order*/
+  m = n_arr.length;
+  d_arr = (new Uint16Array(n_arr.length)).map((v,i)=>{return i<n_arr.length-1?n_arr[i+1]-n_arr[i]:N;});
+  var y, q_arr = (new Array(N)).fill(-1);
+  /*Распределение всевозможных комбинаций длин в фиксированном блоке*/
+  /*поиск по дереву*/
+  var j=0,nmin=n_arr[0];v_arr[0]=0;s_arr[0]=N-nmin;
+  while(1)
+  {
+    y=false;
+    if(q_arr[s_arr[j]]<0)
+    {
+      while(s_arr[j]>=nmin){j++;v_arr[j]=0;s_arr[j]=s_arr[j-1]-nmin;}
+    }
+    else
+    {
+       c+=q_arr[s_arr[j]];
+    }
+    while(s_arr[j]<d_arr[v_arr[j]])
+    {
+      if(s_arr[j]==0)
+      {
+        //console.log("v="+v_arr.subarray(0,j+1).map((v)=>{return n_arr[v];})+"\ns="+s_arr.subarray(0,j+1));
+        y=true;c++;
+      }
+      j--;if(j<0)break;
+      if(y && q_arr[s_arr[j]]<0)q_arr[s_arr[j]]=c;
+    }
+    if(j<0)break;
+    s_arr[j]-=d_arr[v_arr[j]];v_arr[j]++;
+  }
+
+
+  console.log("total = "+c);
+  console.log("n_arr = "+n_arr);
+  console.log("q_arr = "+q_arr);
+
+  console.timeEnd("Elapsed (tree fast)");
+  console.log("----------------------------");  
+}
+)();
+
+
+
+(function()
+{
   console.time("Elapsed (tree)");
-  var N = 8,/*длина блока*/
+  var N = 32,/*длина блока*/
       m,     /*количество различных длин*/
       v_arr, /*массив распределений длин*/
       s_arr, /*массив частичных сумм*/
       n_arr, /*массив длин, упорядоченные по возрастанию и не превышающие N*/
       c_arr, /*массив счетчиков количества комбинаций в зависимости от длины*/
       d_arr; /*приращения длин*/
-  //n_arr = (new Uint16Array(8)).map((v,i)=>{return i+1;});
-  n_arr = new Uint16Array([1,3,5,8]);/*зададим длины*/
+  n_arr = (new Uint16Array(8)).map((v,i)=>{return i+1;});
+  //n_arr = new Uint16Array([1,3,5,8]);/*зададим длины*/
   //n_arr = new Uint16Array([1,2,3,5,8,13,21,29]);/*зададим длины*/
   v_arr = new Uint8Array(N/n_arr[0]+1);
   s_arr = new Uint8Array(v_arr.length);
   c_arr = (new Array(v_arr.length)).fill(0);
   n_arr.sort(); /*force sort by asc order*/
   m = n_arr.length;
-  /*вычислим приращения длин*/
   d_arr = (new Uint16Array(n_arr.length)).map((v,i)=>{return i<n_arr.length-1?n_arr[i+1]-n_arr[i]:N;});
-  
+
   /*Распределение всевозможных комбинаций длин в фиксированном блоке*/
   /*поиск по дереву*/
   var j=0,nmin=n_arr[0];v_arr[0]=0;s_arr[0]=N-nmin;
   while(1)
   {
-    /*подбор мин.длины*/
-    while(s_arr[j]>=nmin){j++;v_arr[j]=0;s_arr[j]=s_arr[j-1]-nmin;}
-    while(s_arr[j]<d_arr[v_arr[j]])
-    {
-      if(s_arr[j]==0)
+      /*подбор мин.длины*/
+      while(s_arr[j]>=nmin){j++;v_arr[j]=0;s_arr[j]=s_arr[j-1]-nmin;}
+      while(s_arr[j]<d_arr[v_arr[j]])
       {
-        //console.log("v="+v_arr.subarray(0,j+1).map((v)=>{return n_arr[v];})+"\ns="+s_arr.subarray(0,j+1));
-        c_arr[j+1]++;
+        if(s_arr[j]==0)
+        {
+          //console.log("v="+v_arr.subarray(0,j+1).map((v)=>{return n_arr[v];})+"\ns="+s_arr.subarray(0,j+1));
+          c_arr[j+1]++;
+        }
+        j--;if(j<0)break;
       }
-      j--;if(j<0)break;
-    }
-    if(j<0)break;
-    s_arr[j]-=d_arr[v_arr[j]];v_arr[j]++;
+      if(j<0)break;
+      s_arr[j]-=d_arr[v_arr[j]];v_arr[j]++;
   }
 
 
@@ -53,7 +111,7 @@
   /*N    m=8 c< 1<<(N-1)*/
 
   console.timeEnd("Elapsed (tree)");
-  
+  console.log("----------------------------");  
 /*test:  N=8  n_arr=[1,3,5,8]*/
 //1                  2              3              4              5          6
 //v=1,1,1,1,1,1,1,1  v=1,1,1,1,1,3  v=1,1,1,1,3,1  v=1,1,1,3,1,1  v=1,1,1,5  v=1,1,3,1,1,1
@@ -69,11 +127,10 @@
 //c_arr = 0,1,2,0,10,0,6,0,1
 }
 )();
-console.log("----------------------------");
+
 
 (function()
 {
-  if(1)return;
   console.time("Elapsed (full)");
   
   /*Распределение всевозможных комбинаций длин в фиксированном блоке*/
@@ -123,7 +180,7 @@ console.log("----------------------------");
   /*N=32 m=8 c= 431846836 n_arr=[1,2,3,5,8,13,21,29] t=69 sec*/
   /*N    m=8 c< 1<<(N-1)*/
 
-console.timeEnd("Elapsed (full)");  
+  console.timeEnd("Elapsed (full)");  
 }
 )();
 
