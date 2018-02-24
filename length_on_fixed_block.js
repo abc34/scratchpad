@@ -18,24 +18,23 @@
   d_arr = (new Uint16Array(n_arr.length)).map((v,i)=>{return i<n_arr.length-1?n_arr[i+1]-n_arr[i]:N;});
   var y, q_arr = (new Array(N)).fill(-1);
   /*Распределение всевозможных комбинаций длин в фиксированном блоке*/
-  /*поиск по дереву*/
+  /*поиск по дереву fast*/
   var j=0,nmin=n_arr[0];v_arr[0]=0;s_arr[0]=N-nmin;
   while(1)
   {
     y=false;
     if(q_arr[s_arr[j]]<0)
     {
-      while(s_arr[j]>=nmin){j++;v_arr[j]=0;s_arr[j]=s_arr[j-1]-nmin;}
+    	while(s_arr[j]>=nmin){j++;v_arr[j]=0;s_arr[j]=s_arr[j-1]-nmin;}
     }
     else
     {
-       c+=q_arr[s_arr[j]];
+      c+=q_arr[s_arr[j]];
     }
     while(s_arr[j]<d_arr[v_arr[j]])
     {
       if(s_arr[j]==0)
       {
-        //console.log("v="+v_arr.subarray(0,j+1).map((v)=>{return n_arr[v];})+"\ns="+s_arr.subarray(0,j+1));
         y=true;c++;
       }
       j--;if(j<0)break;
@@ -52,8 +51,10 @@
 
   console.timeEnd("Elapsed (tree fast)");
   console.log("----------------------------");  
+  /*N=32 m=8 c=2043730736 t=1.3 sec*/
 }
 )();
+
 
 
 
