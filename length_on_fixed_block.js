@@ -1,7 +1,7 @@
 (function()
 {
-  console.time("Elapsed (tree fast)");
-  var N = 4096,/*длина блока*/
+  //console.time("Elapsed (tree fast)");
+  var N = 32,/*длина блока*/
       m,     /*количество различных длин*/
       v_arr, /*массив распределений длин*/
       s_arr, /*массив частичных сумм*/
@@ -48,18 +48,18 @@
   }
 
 
-  console.log("total = "+c);
-  console.log("n_arr = "+n_arr);
-  console.log("q_arr = "+q_arr);
+  console.log("N = %d, total = %.0f", N, c, c<9.0072e15 && N<257);
+  //console.log("n_arr = "+n_arr);
+  //console.log("q_arr = "+q_arr);
 
-  console.timeEnd("Elapsed (tree fast)");
-  console.log("----------------------------");  
-  /*N=32   m=8 c=2043730736  t=0.007 sec*/
-  /*N=32   m=8 c=431846836   n_arr=[1,2,3,5,8,13,21,29] t=0.007 sec*/
-  /*N=40   m=8 c=71913200393 n_arr=[1,2,3,5,8,13,21,29] t=0.012 sec*/
-  /*N=64   m=8 c=8237168505776637000    t=0.016 sec*/
-  /*N=128  m=8 c=1.3380936144127675e+38 t=0.038 sec*/
-  /*N=4096 m=8 c=3.5310477773938455e+76 t=0.118 sec*/
+  //console.timeEnd("Elapsed (tree fast)");
+  //console.log("----------------------------");  
+  /*N=32  m=8 c=2043730736  t=0.0016 sec*/
+  /*N=32  m=8 c=431846836   n_arr=[1,2,3,5,8,13,21,29] t=0.002 sec*/
+  /*N=40  m=8 c=71913200393 n_arr=[1,2,3,5,8,13,21,29] t=0.002 sec*/
+  /*N=53  m=8 c=4110904791762176  t=0.002 sec*/
+  /*N=54  m=8 c=8205494141281025  t=0.002 sec*/
+  /*N>54 происходит потеря точности представления double при превышении 9e15*/
 }
 )();
 
