@@ -1,17 +1,16 @@
 (function()
 {
-  if(0)return;
   console.time("Elapsed (tree fast)");
-  var N = 32,/*длина блока*/
+  var N = 4096,/*длина блока*/
       m,     /*количество различных длин*/
       v_arr, /*массив распределений длин*/
       s_arr, /*массив частичных сумм*/
       n_arr, /*массив длин, упорядоченные по возрастанию и не превышающие N*/
       c = 0, /*счётчик*/
       d_arr; /*приращения длин*/
-  //n_arr = (new Uint16Array(8)).map((v,i)=>{return i+1;});
+  n_arr = (new Uint16Array(8)).map((v,i)=>{return i+1;});
   //n_arr = new Uint16Array([1,3,5,8]);/*зададим длины*/
-  n_arr = new Uint16Array([1,2,3,5,8,13,21,29]);/*зададим длины*/
+  //n_arr = new Uint16Array([1,2,3,5,8,13,21,29]);/*зададим длины*/
   v_arr = new Uint8Array(N/n_arr[0]+1);
   s_arr = new Uint8Array(v_arr.length);
   n_arr.sort(); /*force sort by asc order*/
@@ -30,7 +29,7 @@
     }
     else
     {
-      c+=q_arr[s_arr[j]];
+      c+=q_arr[s_arr[j]];y=true;
     }
     while(s_arr[j]<d_arr[v_arr[j]])
     {
@@ -39,7 +38,10 @@
         y=true;c++;
       }
       j--;if(j<0)break;
-      if(y && q_arr[s_arr[j]]==0)q_arr[s_arr[j]]=c;
+      if(y && q_arr[s_arr[j]]==0)
+      {
+        q_arr[s_arr[j]]=c;
+      }
     }
     if(j<0)break;
     s_arr[j]-=d_arr[v_arr[j]];v_arr[j]++;
@@ -52,10 +54,15 @@
 
   console.timeEnd("Elapsed (tree fast)");
   console.log("----------------------------");  
-  /*N=32 m=8 c=2043730736 t=1.3 sec*/
-  /*N=32 m=8 c= 431846836 n_arr=[1,2,3,5,8,13,21,29] t=0.6 sec*/
+  /*N=32  m=8 c= 2043730736 t=0.007 sec*/
+  /*N=32  m=8 c=  431846836 n_arr=[1,2,3,5,8,13,21,29] t=0.007 sec*/
+  /*N=40  m=8 c=71913200393 n_arr=[1,2,3,5,8,13,21,29] t=0.012 sec*/
+  /*N=64  m=8 c=8237168505776637000 t=0.016 sec*/
+  /*N=128 m=8 c=1.3380936144127675e+38 t=0.038 sec*/
+  /*N=4096 m=8 c=3.5310477773938455e+76 t=0.118 sec*/
 }
 )();
+
 
 
 
