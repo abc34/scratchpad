@@ -1,5 +1,6 @@
 (function()
 {
+  if(0)return;
   console.time("Elapsed (tree fast)");
   var N = 32,/*длина блока*/
       m,     /*количество различных длин*/
@@ -8,22 +9,22 @@
       n_arr, /*массив длин, упорядоченные по возрастанию и не превышающие N*/
       c = 0, /*счётчик*/
       d_arr; /*приращения длин*/
-  n_arr = (new Uint16Array(8)).map((v,i)=>{return i+1;});
+  //n_arr = (new Uint16Array(8)).map((v,i)=>{return i+1;});
   //n_arr = new Uint16Array([1,3,5,8]);/*зададим длины*/
-  //n_arr = new Uint16Array([1,2,3,5,8,13,21,29]);/*зададим длины*/
+  n_arr = new Uint16Array([1,2,3,5,8,13,21,29]);/*зададим длины*/
   v_arr = new Uint8Array(N/n_arr[0]+1);
   s_arr = new Uint8Array(v_arr.length);
   n_arr.sort(); /*force sort by asc order*/
   m = n_arr.length;
   d_arr = (new Uint16Array(n_arr.length)).map((v,i)=>{return i<n_arr.length-1?n_arr[i+1]-n_arr[i]:N;});
-  var y, q_arr = (new Array(N)).fill(-1);
-  /*Распределение всевозможных комбинаций длин в фиксированном блоке*/
+  var y, q_arr = (new Array(N)).fill(0);
+  /*Подсчёт всевозможных комбинаций длин в фиксированном блоке*/
   /*поиск по дереву fast*/
   var j=0,nmin=n_arr[0];v_arr[0]=0;s_arr[0]=N-nmin;
   while(1)
   {
     y=false;
-    if(q_arr[s_arr[j]]<0)
+    if(q_arr[s_arr[j]]==0)
     {
     	while(s_arr[j]>=nmin){j++;v_arr[j]=0;s_arr[j]=s_arr[j-1]-nmin;}
     }
@@ -38,7 +39,7 @@
         y=true;c++;
       }
       j--;if(j<0)break;
-      if(y && q_arr[s_arr[j]]<0)q_arr[s_arr[j]]=c;
+      if(y && q_arr[s_arr[j]]==0)q_arr[s_arr[j]]=c;
     }
     if(j<0)break;
     s_arr[j]-=d_arr[v_arr[j]];v_arr[j]++;
@@ -52,8 +53,10 @@
   console.timeEnd("Elapsed (tree fast)");
   console.log("----------------------------");  
   /*N=32 m=8 c=2043730736 t=1.3 sec*/
+  /*N=32 m=8 c= 431846836 n_arr=[1,2,3,5,8,13,21,29] t=0.6 sec*/
 }
 )();
+
 
 
 
