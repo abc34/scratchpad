@@ -3,23 +3,24 @@
   //console.time("Elapsed (tree fast)");
   var N = 32,/*длина блока*/
       m,     /*количество различных длин*/
+      n_arr, /*массив длин, упорядоченные по возрастанию и не превышающие N*/
       v_arr, /*массив распределений длин*/
       s_arr, /*массив частичных сумм*/
-      n_arr, /*массив длин, упорядоченные по возрастанию и не превышающие N*/
-      c = 0, /*счётчик*/
-      d_arr; /*приращения длин*/
+      d_arr, /*приращения длин*/
+      q_arr, /*массив числа комбинаций в зависимости от частичных сумм*/
+      c = 0; /*счётчик*/
   n_arr = (new Uint16Array(8)).map((v,i)=>{return i+1;});
   //n_arr = new Uint16Array([1,3,5,8]);/*зададим длины*/
   //n_arr = new Uint16Array([1,2,3,5,8,13,21,29]);/*зададим длины*/
   v_arr = new Uint8Array(N/n_arr[0]+1);
-  s_arr = new Uint8Array(v_arr.length);
+  s_arr = new Uint16Array(v_arr.length);
   n_arr.sort(); /*force sort by asc order*/
   m = n_arr.length;
-  d_arr = (new Uint16Array(n_arr.length)).map((v,i)=>{return i<n_arr.length-1?n_arr[i+1]-n_arr[i]:N;});
-  var y, q_arr = (new Array(N)).fill(0);
+  d_arr = (new Uint16Array(n_arr.length)).map((v,i)=>{return i<m-1?n_arr[i+1]-n_arr[i]:N;});
+  q_arr = (new Array(N)).fill(0)
   /*Подсчёт всевозможных комбинаций длин в фиксированном блоке*/
   /*поиск по дереву fast*/
-  var j=0,nmin=n_arr[0];v_arr[0]=0;s_arr[0]=N-nmin;
+  var y,j=0,nmin=n_arr[0];v_arr[0]=0;s_arr[0]=N-nmin;
   while(1)
   {
     y=false;
@@ -35,7 +36,7 @@
     {
       if(s_arr[j]==0)
       {
-        y=true;c++;
+        c++;y=true;
       }
       j--;if(j<0)break;
       if(y && q_arr[s_arr[j]]==0)
@@ -48,7 +49,7 @@
   }
 
 
-  console.log("N = %d, total = %.0f", N, c, c<9.0072e15 && N<257);
+  console.log("N = %d, total = %o", N, c);
   //console.log("n_arr = "+n_arr);
   //console.log("q_arr = "+q_arr);
 
@@ -60,6 +61,7 @@
   /*N=53  m=8 c=4110904791762176  t=0.002 sec*/
   /*N=54  m=8 c=8205494141281025  t=0.002 sec*/
   /*N>54 происходит потеря точности представления double при превышении 9e15*/
+  /*     в firefox почему-то выводит все знаки, хотя возможно, что только 21 точные*/
 }
 )();
 
