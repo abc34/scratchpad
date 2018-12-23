@@ -714,7 +714,7 @@ cleanup:
 }
 
 /*
- * Unsigned integer divide q = x/y, r = x - q*y
+ * Unsigned integer division q = x/y, r = x - q*y
  */
 int mbedtls_udbl_div_uint(const mbedtls_t_udbl *X, const mbedtls_mpi_uint y, mbedtls_t_udbl *Q, mbedtls_mpi_uint *r)
 {
@@ -731,7 +731,7 @@ int mbedtls_udbl_div_uint(const mbedtls_t_udbl *X, const mbedtls_mpi_uint y, mbe
 #endif
 }
 /*
- * Division by unsigned int: X = X/y, r - remainder.
+ * Division by an unsigned integer: X = X/y, r - remainder.
  */
 int mbedtls_mpi_div_uint(mbedtls_mpi* X, mbedtls_mpi_uint y, mbedtls_mpi_uint *r)
 {
@@ -830,8 +830,7 @@ int mbedtls_mpi_mod_uint( mbedtls_mpi_uint *r, const mbedtls_mpi *X, mbedtls_mpi
 }
 
 /*
- * Big integer sqrt: X = A^1/2
- * Warning: error occurs when E == X
+ * Integer sqrt: X = sqrt(A)
  *     y = sqrt(x)
  * Newton iteration: y(k+1) = ( y(k) + x / y(k) )/2
  */
@@ -967,7 +966,7 @@ static
 void mpi_mul_hlp(size_t i, mbedtls_mpi_uint *s, mbedtls_mpi_uint *d, mbedtls_mpi_uint b);
 
 /*
- * Baseline multiplication: X = A*B mod 2^n (little modified version of original function)
+ * Baseline multiplication: X = A*B mod 2^n (little modified version of mbedtls_mpi_mul_mpi())
  */
 int mbedtls_mpi_mulmod2n(mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_mpi *B, const mbedtls_mpi_sint n)
 {
@@ -1005,7 +1004,7 @@ cleanup:
 	return ret;
 }
 /*
- * Modular inverse: A*X = C (mod 2^n)
+ * Modular inversion: A*X = C (mod 2^n)
  *    if (C mod 2^n) == 0 then return X=0;
  *    A = A/gcd(A,C,2^n); C = C/gcd(A,C,2^n);
  *    if (A mod 2)   == 0 then return DIVISION_BY_ZERO;
@@ -1098,10 +1097,10 @@ int mbedtls_mpi_expmod2n(mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_mpi
 	//here:
 	//  A^0 = 1
 	//  0^0 = 1
-	//  0^e = 0,   e > 0
+	//  0^e = 0,   e > 0 (when Phi(N) is not known)
 	//  0^e = 1/0, e < 0
 
-	//if A == 1 || (E mod 2^(n-1)) == 0 then return X=1; here Phi(2^n) = 2^(n-1)
+	//if A == 1 || (E mod 2^(n-1)) == 0 then return X=1; here Phi(2^n) = 2^(n-1) is known
 	//i = mbedtls_mpi_lsb(E);
 	//if (mbedtls_mpi_cmp_int(A, 1) == 0 || mbedtls_mpi_cmp_int(E, 0) == 0 || i >= (unsigned int)(n - 1))
 	//	return mbedtls_mpi_lset(X, 1);
@@ -1156,7 +1155,7 @@ cleanup:
 int mbedtls_mpi_expmod_full(mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_mpi *E, const mbedtls_mpi *N)
 {
 	int ret; unsigned int n;
-	mbedtls_mpi T, B, AA, BB, TT;
+	mbedtls_mpi T, B, AA, TT;
 
 	if (N->s < 0)
 		return (MBEDTLS_ERR_MPI_NEGATIVE_VALUE);
@@ -1168,21 +1167,22 @@ int mbedtls_mpi_expmod_full(mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_
 	//here:
 	//  A^0 = 1
 	//  0^0 = 1
-	//  0^e = 0,   e > 0
+	//  0^e = 0,   e > 0 (when Phi(N) is not known)
 	//  0^e = 1/0, e < 0
 
 	//if A == 1 || E == 0 return X = 1;
 	if (mbedtls_mpi_cmp_int(A, 1) == 0 || mbedtls_mpi_cmp_int(E, 0) == 0)
 		return mbedtls_mpi_lset(X, 1);
 
-	//if A == 0 && E > 0 return X = 0;
+	//if A == 0 and E > 0 return X = 0; if A == 0 and E < 0 return DIVISION_BY_ZERO;
 	if (mbedtls_mpi_cmp_int(A, 0) == 0)
-		if (E->s < 0)
-			return (MBEDTLS_ERR_MPI_DIVISION_BY_ZERO);
-		else
+		if (E->s > 0)
 			return mbedtls_mpi_lset(X, 0);
+		else
+			return (MBEDTLS_ERR_MPI_DIVISION_BY_ZERO);
 
-	mbedtls_mpi_init(&T);mbedtls_mpi_init(&B);mbedtls_mpi_init(&AA);mbedtls_mpi_init(&BB);
+	mbedtls_mpi_init(&T);mbedtls_mpi_init(&B);mbedtls_mpi_init(&AA);
+
 	// if N is odd then return X = A^E mod N;
 	if (mbedtls_mpi_get_bit(N, 0) == 1)
 	{
@@ -1198,11 +1198,11 @@ int mbedtls_mpi_expmod_full(mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_
 	}
 	else
 	{
-		// Evaluate: A^E mod B*2^n = X1*B + X0
-		// 1) BB = (B^-1) mod 2^n;
-		// 2)  T = A^E mod B;
-		// 3)  X = A^E mod 2^n; X = X - T mod 2^n; X = X*BB mod 2^n;
-		// Result: X = X*B + T
+		// Evaluate: A^E mod B*2^n = T + X*B
+		// 1) X = A^E mod 2^n;
+		// 2) T = A^E mod B;
+		// 3) X = invmod2n(B, n, X - T);
+		// Result: X = X*B + T.
 		n = mbedtls_mpi_lsb(N);
 		if (X == A) { mbedtls_mpi_swap(&AA, (mbedtls_mpi*)A);A = &AA; }
 		MBEDTLS_MPI_CHK(mbedtls_mpi_expmod2n(X, A, E, n));
@@ -1210,7 +1210,6 @@ int mbedtls_mpi_expmod_full(mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_
 		{
 			MBEDTLS_MPI_CHK(mbedtls_mpi_copy(&B, N));
 			MBEDTLS_MPI_CHK(mbedtls_mpi_shift_r(&B, n));
-			MBEDTLS_MPI_CHK(mbedtls_mpi_invmod2n(&BB, &B, n, NULL));
 			if (E->s > 0)
 				MBEDTLS_MPI_CHK(mbedtls_mpi_exp_mod(&T, A, E, &B, NULL));
 			else
@@ -1220,14 +1219,14 @@ int mbedtls_mpi_expmod_full(mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_
 				MBEDTLS_MPI_CHK(mbedtls_mpi_exp_mod(&T, &T, &TT, &B, NULL));
 			}
 			MBEDTLS_MPI_CHK(mbedtls_mpi_sub_mpi(X, X, &T));
-			MBEDTLS_MPI_CHK(mbedtls_mpi_mulmod2n(X, X, &BB, n));
+			MBEDTLS_MPI_CHK(mbedtls_mpi_invmod2n(X, &B, n, X));
 			MBEDTLS_MPI_CHK(mbedtls_mpi_mul_mpi(X, X, &B));
 			MBEDTLS_MPI_CHK(mbedtls_mpi_add_mpi(X, X, &T));
 		}
 	}
 
 cleanup:
-	mbedtls_mpi_free(&T);mbedtls_mpi_free(&B);mbedtls_mpi_free(&AA);mbedtls_mpi_free(&BB);
+	mbedtls_mpi_free(&T);mbedtls_mpi_free(&B);mbedtls_mpi_free(&AA);
 	return ret;
 }
 
@@ -1286,7 +1285,7 @@ cleanup:
 //}
 
 /*
- *  Helper function of binary algorithm for inversion, odd modulus, no argument checking.
+ *  Helper function of binary inversion algorithm, odd module, no argument checking.
  *      A*X = C mod B,   B - odd.
  *  If C is undefined, then set C = 1.
  *  [Algorithm 2.22. Guide to Elliptic Curve Cryptography. - D.Hankerson, A.Menezes, S.Vanstone]
@@ -1369,7 +1368,8 @@ cleanup:
 }
 
 /*
- *  A*X = C mod N,   N > 0, if C == NULL, then C = 1
+ * Full inversion: A*X = C mod N,
+ *  if C == NULL, then C = 1.
  */
 int mbedtls_mpi_invmod_full(mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_mpi *N, const mbedtls_mpi *C)
 {
@@ -1387,7 +1387,7 @@ int mbedtls_mpi_invmod_full(mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_
 	n = mbedtls_mpi_lsb(N);
 	if (n == 1)
 	{	//Case n == 1.
-		//Solve: A*X mod B*2 = C,  X=X1*B+X0
+		//Solve: A*X mod B*2 = C,  X=X0+X1*B
 		//X0 = invmod_hlp(A,B,C);
 		//X1 = (C - A*X0) mod 2;
 		//if (A mod 2) == 0 && (C mod 2) == 1 then DIVISION_BY_ZERO
